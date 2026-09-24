@@ -1,0 +1,6 @@
+streamlit>=1.50
+requests>=2.31
+shapely>=2.0
+pyproj>=3.6
+pandas>=2.0
+python-dotenv>=1.0
