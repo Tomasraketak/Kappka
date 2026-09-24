@@ -7,9 +7,14 @@ from __future__ import annotations
 
 import argparse
 import sys
+import unicodedata
 
 from . import config, pipeline, storage
 from .cdse import CDSEClient
+
+
+def _normalize(text: str) -> str:
+    return "".join(c for c in unicodedata.normalize("NFKD", text.lower()) if not unicodedata.combining(c))
 
 
 def _progress(p: float, msg: str) -> None:
@@ -40,7 +45,11 @@ def main(argv: list[str] | None = None) -> int:
     ids = None
     if args.name:
         wbs = store.waterbodies()
-        ids = wbs[wbs["name"].str.contains(args.name, case=False)]["id"].tolist()
+        q = _normalize(args.name)
+        ids = wbs[wbs["name"].map(lambda n: q in _normalize(n))]["id"].tolist()
+        if not ids:
+            print(f"Žádná vodní plocha neodpovídá „{args.name}“.", file=sys.stderr)
+            return 1
     res = pipeline.update_analysis(settings, store, CDSEClient(creds.client_id, creds.client_secret), ids, _progress)
     print(res)
     return 0
